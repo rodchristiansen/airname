@@ -22,20 +22,24 @@ jobs:
     - name: Show available SDKs
       run: xcodebuild -showsdks
     
-    - name: Build
+    - name: Build Debug
       run: |
         xcodebuild -project AirName.xcodeproj \
                    -scheme AirName \
                    -configuration Debug \
                    -destination 'platform=macOS,arch=arm64' \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGNING_REQUIRED=NO \
                    build
     
-    - name: Test Build for Release
+    - name: Build Release
       run: |
         xcodebuild -project AirName.xcodeproj \
                    -scheme AirName \
                    -configuration Release \
                    -destination 'platform=macOS,arch=arm64' \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGNING_REQUIRED=NO \
                    build
 
   code-quality:
