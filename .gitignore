@@ -124,3 +124,15 @@ Temporary Items
 *.log
 *.tmp
 *.temp
+
+# Build directories
+dist-build/
+versioned-build/
+
+# Environment and secrets - DO NOT COMMIT PRIVATE INFO
+.env
+*.p12
+*.mobileprovision
+
+# Notarization files
+*.zip
