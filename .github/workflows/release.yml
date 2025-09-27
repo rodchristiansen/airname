@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v2025.09.27.1543
+
+jobs:
+  release:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+    
+    - name: Build Release (unsigned for GitHub)
+      run: |
+        xcodebuild -project AirName.xcodeproj \
+                   -scheme AirName \
+                   -configuration Release \
+                   -destination 'platform=macOS,arch=arm64' \
+                   -derivedDataPath ./build \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGNING_REQUIRED=NO \
+                   clean build
+    
+    - name: Create app bundle for release
+      run: |
+        mkdir -p release
+        cp -R ./build/Build/Products/Release/AirName.app release/
+        cd release
+        zip -r AirName-${{ steps.get_version.outputs.VERSION }}.zip AirName.app
+    
+    - name: Generate Release Notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        ## AirName v${{ steps.get_version.outputs.VERSION }}
+        
+        ### What's New
+        - Lightweight macOS menu bar app for displaying computer name
+        - Perfect for AirDrop identification in shared environments
+        - Built with Swift 6.0 and modern concurrency
+        - Minimal resource usage and clean design
+        
+        ### Installation
+        **Note**: This GitHub release contains an unsigned build for testing purposes only.
+        
+        For production use with proper code signing and notarization:
+        1. Download the source code
+        2. Configure your `.env` file with your Developer ID certificate
+        3. Run `./build.sh` to create a signed and notarized version
+        
+        ### Requirements
+        - macOS 15.0 or later
+        - For unsigned version: May require "Allow apps downloaded from anywhere" or right-click → Open
+        
+        ### Usage
+        1. Download and extract `AirName-${{ steps.get_version.outputs.VERSION }}.zip`
+        2. Move `AirName.app` to `/Applications/Utilities/`
+        3. Launch the app - your computer name will appear in the menu bar
+        EOF
+        
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+        cat release_notes.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        name: AirName v${{ steps.get_version.outputs.VERSION }}
+        body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+        files: |
+          release/AirName-${{ steps.get_version.outputs.VERSION }}.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
