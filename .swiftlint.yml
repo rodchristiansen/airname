@@ -1,0 +1,64 @@
+disabled_rules: # rule identifiers to exclude from running
+  - trailing_whitespace
+  - todo
+
+opt_in_rules: # some rules are turned off by default, so you need to opt-in
+  - empty_count
+  - empty_string
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - strict_fileprivate
+  - unneeded_parentheses_in_closure_argument
+
+included: # paths to include during linting. `--path` is ignored if present.
+  - AirName
+  - AirNameTests
+  - AirNameUITests
+
+excluded: # paths to ignore during linting. Takes precedence over `included`.
+  - Carthage
+  - Pods
+  - .build
+
+analyzer_rules: # Rules run by `swiftlint analyze`
+  - explicit_self
+
+# configurable rules can be customized from this configuration file
+line_length:
+  warning: 120
+  error: 140
+  ignores_function_declarations: true
+  ignores_comments: true
+  ignores_urls: true
+
+function_body_length:
+  warning: 50
+  error: 100
+
+function_parameter_count:
+  warning: 5
+  error: 8
+
+type_body_length:
+  warning: 200
+  error: 300
+
+file_length:
+  warning: 500
+  error: 1200
+
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+
+identifier_name:
+  min_length: 1
+  max_length:
+    warning: 40
+    error: 60
+  excluded:
+    - id
+    - url
+    - app
+
+reporter: "xcode" # reporter type (xcode, json, csv, checkstyle, codeclimate, junit, html, emoji, sonarqube, markdown, github-actions-logging)
