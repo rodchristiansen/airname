@@ -8,6 +8,8 @@
 import SwiftUI
 import Foundation
 
+let log = FileLog(tool: "airname")
+
 @main
 struct DeviceNameMenuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -32,6 +34,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, Sendable {
     
     @MainActor
     private func setupApplication() async {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let build = info?["CFBundleVersion"] as? String ?? "unknown"
+        log.info("started version \(version) build \(build)")
+
         // Create the status item with variable length
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -58,6 +65,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, Sendable {
             button.toolTip = "Computer Name for AirDrop"
             
             // No menu functionality - clicking does nothing
+            log.info("menu bar shows computer name \"\(deviceName)\"")
+        } else {
+            log.error("status item could not be created; nothing is displayed")
         }
 
         // Set activation policy to accessory to hide Dock icon
@@ -72,7 +82,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, Sendable {
         // Swift 6: Use async/await pattern for potentially slow operations
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                let deviceName = Host.current().localizedName ?? "Mac"
+                guard let deviceName = Host.current().localizedName else {
+                    log.warn("computer name unavailable, showing fallback \"Mac\"")
+                    continuation.resume(returning: "Mac")
+                    return
+                }
                 continuation.resume(returning: deviceName)
             }
         }
@@ -132,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, Sendable {
                 if let statusItem = self.statusItem {
                     NSStatusBar.system.removeStatusItem(statusItem)
                     self.statusItem = nil
+                    log.info("status item removed")
                 }
             }
             
@@ -154,6 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, Sendable {
     
     // CRITICAL: Override to allow termination
     nonisolated func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        log.info("terminating")
         Task { @MainActor in
             await cleanupResources()
         }
